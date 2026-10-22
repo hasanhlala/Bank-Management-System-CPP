@@ -12,8 +12,10 @@
 
 using namespace std;
 
-// Global file name for client data
-string FileName = "ClientsData";
+
+string ClientsFile = "ClientsData";
+string UsersFile = "UsersFile";
+
 struct stClientData {
 	string AccountNumber;
 	string PinCode;
@@ -23,6 +25,12 @@ struct stClientData {
 	bool MarkForDelete = false;
 };
 
+struct stUserAccount {
+	string UserName;
+	string Passowrd;
+	int Permission;
+};
+
 enum enTasks {
 	ChowClientList = 1,
 	AddNewClient = 2,
@@ -30,7 +38,8 @@ enum enTasks {
 	UpdateClientInfo = 4,
 	FindClient = 5,
 	Transactions = 6,
-	Exit = 7
+	ManageUsers = 7,
+	LogOut = 8
 };
 
 enum enTransactions {
@@ -67,7 +76,7 @@ void ReturnToTransactionsMainMenue();
 string ReadAccountNumber();
 void PrintDepositScreen();
 void DepositInClient();
-void PerformeTransaction(enTransactions Trans);
+void PerformeTransaction(enTransactions Trans, bool& PerformeMore);
 enTransactions ReadTheTransaction();
 void PrintTransactionsMainMenue();
 void PerformeTransactions();
@@ -82,6 +91,7 @@ void PrintClientBalanceRow(stClientData& Client);
 void DisplayTotalBalance();
 void PrintWithdrawScreen();
 void WithdrawFromClient();
+void PrintloginScreen();
 
 void StartTheProgram();
 
@@ -110,7 +120,7 @@ int main() {
 bool IfTheAccountNumperFound(string AccountNumber) {
 
 	fstream MyFile;
-	MyFile.open(FileName, ios::in);
+	MyFile.open(ClientsFile, ios::in);
 
 	if (MyFile.is_open()) {
 		string line;
@@ -191,7 +201,7 @@ void AppendClientRecordToFile(string Record) {
 
 	fstream MyFile;
 
-	MyFile.open(FileName, ios::out | ios::app);
+	MyFile.open(ClientsFile, ios::out | ios::app);
 
 	if (MyFile.is_open()) {
 
@@ -249,7 +259,7 @@ void WriteClientsToFile(vector <stClientData>& vClients) {
 
 	fstream MyFile;
 
-	MyFile.open(FileName, ios::out);
+	MyFile.open(ClientsFile, ios::out);
 
 	if (MyFile.is_open()) {
 		for (int i = 0; i < vClients.size(); i++) {
@@ -265,7 +275,7 @@ void ReadClientsFromFile(vector<stClientData>& vClients) {
 
 	fstream MyFile;
 
-	MyFile.open(FileName, ios::in);
+	MyFile.open(ClientsFile, ios::in);
 
 	if (MyFile.is_open()) {
 		string line = "";
@@ -404,7 +414,7 @@ void InteractiveDeleteMultipleClients() {
 
 		cout << "\n\n";
 		if (toupper(deleteMore) == 'N')
-			cout << "Enter the client account number you want to delete from " << FileName << ": ";
+			cout << "Enter the client account number you want to delete from " << ClientsFile << ": ";
 		else
 			cout << "Enter the next client account number: ";
 		cin >> accountNumber;
@@ -437,7 +447,7 @@ stClientData FindClientInFileByAccountNumber(string AccountNumber) {
 	string Record = "";
 
 	fstream MyFile;
-    MyFile.open(FileName, ios::in);
+    MyFile.open(ClientsFile, ios::in);
 
 	if (MyFile.is_open()) {
 		string line;
@@ -761,12 +771,111 @@ void PerformeTheTask(enTasks Task) {
 	case enTasks::Transactions :
 		PerformeTransactions();
 		ReturnToMainMenue();
-	case enTasks::Exit :
-		PrintEndCaption();
+	case enTasks::ManageUsers:
+		break;
+	case enTasks::LogOut :
+		LoginMainMenu();
 		break;
 		
 	}
 
+}
+
+void PrintloginScreen() {
+	string LoginScreen = "Login Screen";
+	int LineLength = 10 + LoginScreen.length() + 10;
+
+	cout << string(LineLength, '=') << endl;
+	cout << string(10, ' ') << LoginScreen << endl;
+	cout << string(LineLength, '=') << endl;
+}
+
+string CreatUserAccountRecord(stUserAccount UserAccount) {
+	string SUA = "";
+	SUA += UserAccount.UserName + "/#/"
+		+ UserAccount.Passowrd + "/#/"
+		+ to_string(UserAccount.Permission);
+
+	return SUA;
+}
+
+stUserAccount ReadUserAccount() {
+	stUserAccount UserAccount;
+	cout << "Enter Username? ";
+	cin >> UserAccount.UserName;
+	cout << "Enter Passoerd? ";
+	cin >> UserAccount.Passowrd;
+
+	return UserAccount;
+}
+
+stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/") {
+
+	vector<string> vRecordData = { "" };
+	vRecordData = SplitString(Record, Diameter);
+
+	stUserAccount UA;
+
+	if (vRecordData.size() == 0) {
+		return UA;
+	}
+
+	UA.UserName = vRecordData[0];
+
+	if (vRecordData.size() >= 2) {
+		UA.Passowrd = vRecordData[1];
+	}
+	if (vRecordData.size() >= 3) {
+		UA.Permission = stoi(vRecordData[2]);
+	}
+
+	return UA;
+}
+
+
+bool IfTheUsernameAndPassFound(stUserAccount UserAccount) {
+	
+	string Record = "";
+
+	fstream MyFile;
+	MyFile.open(UsersFile, ios::in);
+
+	if (MyFile.is_open()) {
+		string line;
+		stUserAccount UA = {};
+
+		while (getline(MyFile, line)) {
+			UA = ParseRecordToUserAccount(line, "/#/");
+			if (UA.UserName == UserAccount.UserName && UA.Passowrd == UserAccount.Passowrd);
+				return true;
+		}
+
+		MyFile.close();
+		
+	}
+	return false;
+}
+
+void loginToAccount() {
+
+	stUserAccount UserAccount = ReadUserAccount();
+
+	while (!IfTheUsernameAndPassFound(UserAccount)) {
+		system("cls");
+		PrintloginScreen();
+		cout << "Invalid Username/Passowrd!\n";
+		UserAccount = ReadUserAccount();
+	}
+
+}
+
+void LoginMainMenu() {
+
+	system("cls");
+	PrintloginScreen();
+
+	loginToAccount();
+	
 }
 
 enTasks WhatTheTask() {
@@ -811,6 +920,9 @@ void PrintEndCaption() {
 }
 
 void StartTheProgram() {
+	
+	LoginMainMenu();
+
 	while (true) {
 		
 		PrintTheMainMenu();
