@@ -132,9 +132,9 @@ void ReturnToUsersActionsMainMenu();
 void PrintAddNewUserScreen();
 bool IfUsernameFoundInFile(string Username);
 stUserAccount ReadNewUserInfo();
-void AddNewUserToFile();
-void PerformeUserAction(enUsersTransactions UserTransaction);
-void PerformeUsersActions();
+void InteractiveAddSingleUserAccount();
+void PerformeUserTransactions(enUsersTransactions UserTransaction);
+void PerformeUsersTransactions();
 void ReadUsersFromFile(vector<stUserAccount>& vUsers);
 string CreatUserAccountRecord(stUserAccount UserAccount);
 stUserAccount ReadUserAccount();
@@ -251,6 +251,14 @@ void PrintClientData(stClientData CD) {
 	cout << "Phone          : " << CD.Phone << endl;
 	cout << "Account Balance: " << CD.AccountBalance << endl;
 
+}
+
+void PrintSuccesOfTheOperationMessage(string Message) {
+	int LineLength = 10 + Message.length() + 10;
+	cout << "\n\n";
+	cout << string(LineLength, '-') << endl;
+	cout << string(10,' ') << Message << endl;
+	cout << string(LineLength, '-') << endl;
 }
 
 void AppendClientRecordToFile(string Record) {
@@ -1100,10 +1108,21 @@ void AppendTheNewUserAccountRecordToFile(string UserAccountRecord) {
 	}
 }
 
-void AddNewUserToFile() {
-	PrintAddNewUserScreen();
+void InteractiveAddSingleUserAccount() {
 	stUserAccount UserAccount = ReadNewUserInfo();
 	AppendTheNewUserAccountRecordToFile(CreatUserAccountRecord(UserAccount));
+}
+
+void InteractiveAddMultiUsersAccounts() {
+	char AddMore = 'y';
+	while (toupper(AddMore)) {
+		system("cls");
+		PrintAddNewUserScreen();
+		InteractiveAddSingleUserAccount();
+		PrintSuccesOfTheOperationMessage("The operation completed succefully!!");
+		cout << "\nDo you want to add more accounts ? y/n ? ";
+		cin >> AddMore;
+	}
 }
 
 void PrintDeleteScreen() {
@@ -1153,20 +1172,63 @@ void InteractiveDeleteSingleUserAccount(vector <stUserAccount>& vUsers) {
 }
 
 void InteractiveDeleteMultiUsersAccounts() {
-	PrintDeleteScreen();
 	vector <stUserAccount> vUsers;
 	ReadUsersFromFile(vUsers);
 	char DeleteMore = 'y';
 
 	while (DeleteMore == 'y') {
+		system("cls");
+		PrintDeleteScreen();
 		InteractiveDeleteSingleUserAccount(vUsers);
+		PrintSuccesOfTheOperationMessage("The operation completed succefully...");
 		cout << "\nDo you want to delete more ? y/n ?";
 		cin >> DeleteMore;
 	}
 	LoadUsersAccountsFromVectorToFile(vUsers);
 }
 
-void PerformeUserAction(enUsersTransactions UserTransaction) {
+void PrintUpdateUserAccountScreen() {
+	string Title = "Update User Account";
+	int LineLength = 10 + Title.length() + 10;
+	cout << string(LineLength, '-') << endl;
+	cout << string(10, ' ') << Title << endl;
+	cout << string(LineLength, '-') << endl;
+}
+
+void UpdateAccountInfo(stUserAccount& UAA) {
+	cout << "\nEnter the new passowrd : ";
+	cin >> UAA.Passowrd;
+	cout << "Enter the new permission : \n";
+	UAA.Permission = ReadUserPermission();
+}
+
+void ReplaceAccountWithUpdatedAccount(vector<stUserAccount>& vUsers,stUserAccount UAA) {
+	for (int i = 0; i < vUsers.size(); i++) {
+		if (vUsers[i].UserName == UAA.UserName) {
+			vUsers[i] = UAA;
+			break;
+		}
+	}
+}
+
+void UpdateUserAccount() {
+	PrintUpdateUserAccountScreen();
+	stUserAccount UserAccountUpdate = ReadUserAccount();
+
+	while (!IfTheUsernameAndPassFound(UserAccountUpdate)) {
+		cout << "\nUncorrect Username/Passowrd!!\n";
+		cout << "Please Enter a correct one...\n";
+		UserAccountUpdate = ReadUserAccount();
+	}
+	UpdateAccountInfo(UserAccountUpdate);
+	PrintSuccesOfTheOperationMessage("The Update Opration are completed succefully..");
+	vector<stUserAccount> vUsers;
+	ReadUsersFromFile(vUsers);
+	ReplaceAccountWithUpdatedAccount(vUsers,UserAccountUpdate);
+	LoadUsersAccountsFromVectorToFile(vUsers);
+}
+
+void PerformeUserTransactions(enUsersTransactions UserTransaction) {
 
 	switch (UserTransaction) {
 	case enUsersTransactions::ListUsers :
@@ -1174,14 +1236,16 @@ void PerformeUserAction(enUsersTransactions UserTransaction) {
 		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::AddNewuser:
-		AddNewUserToFile();
+		InteractiveAddMultiUsersAccounts();
 		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::DeleteUser:
-		InteractiveDeleteMultiUsersAccounts;
+		InteractiveDeleteMultiUsersAccounts();
 		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::UpdateUser:
+		UpdateUserAccount();
+		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::Finduser:
 		break;
@@ -1191,14 +1255,14 @@ void PerformeUserAction(enUsersTransactions UserTransaction) {
 	}
 }
 
-void PerformeUsersActions() {
+void PerformeUsersTransactions() {
 
 	bool PerformeMore = true;
 	while (PerformeMore) {
 		system("cls");
 		PrintManageUsresMainMenue();
 		enUsersTransactions UT = ReadUsersTransactions();
-
+		PerformeUserTransactions(UT);
 	}
 }
 
@@ -1259,4 +1323,3 @@ void StartTheProgram() {
 
 
 }
-
