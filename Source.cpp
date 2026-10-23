@@ -15,6 +15,7 @@ using namespace std;
 
 string ClientsFile = "ClientsData";
 string UsersFile = "UsersFile";
+stUserAccount CurrentUser;
 
 struct stClientData {
 	string AccountNumber;
@@ -28,7 +29,7 @@ struct stClientData {
 struct stUserAccount {
 	string UserName;
 	string Passowrd;
-	int Permission;
+	enMainMenuPermissions Permission;
 };
 
 enum enTasks {
@@ -43,20 +44,35 @@ enum enTasks {
 };
 
 enum enTransactions {
-	Deposit =1,
-	Withdraw =2,
-	TotalBalance =3,
-	MainMenue =4
+	Deposit = 1,
+	Withdraw = 2,
+	TotalBalance = 3,
+	MainMenue = 4
 };
 
 enum enUsersTransactions {
 	ListUsers = 1,
-	AddNewuser=2,
-	DeleteUser=3,
-	UpdateUser =4,
-	Finduser=5,
+	AddNewuser = 2,
+	DeleteUser = 3,
+	UpdateUser = 4,
+	Finduser = 5,
 	MainMenue = 6
 };
+
+enum enMainMenuPermissions {
+	pAll = -1,
+	pNoThing = 0,
+	pListClients = 1,
+	pAddNewClient = 2,
+	pDeleteClient = 4,
+	pUpdateClient = 8,
+	pFindClient = 16,
+	pTransactons = 32,
+	pManageUsers = 64,
+
+};
+
+
 
 vector<string> SplitString(string S1, string delim);
 stClientData ReadClientData();
@@ -101,6 +117,29 @@ void DisplayTotalBalance();
 void PrintWithdrawScreen();
 void WithdrawFromClient();
 void PrintloginScreen();
+bool IfTheUsernameAndPassFound(stUserAccount UserAccount);
+void LoginToAccount(stUserAccount& UserAccount);
+void LoginAction();
+void PrintManageUsresMainMenue();
+enUsersTransactions ReadUsersTransactions();
+void PrintUserTableHeader(int Users);
+void PrintUserRow(stUserAccount& UA);
+void PrintUsersListTable(vector <stUserAccount>& vUsers);
+void DisplayAllUsersAccount();
+void ReturnToUsersActionsMainMenu();
+void ReturnToUsersActionsMainMenu();
+void PrintAddNewUserScreen();
+bool IfUsernameFoundInFile(string Username);
+stUserAccount ReadNewUserInfo();
+void AddNewUserToFile();
+void PerformeUserAction(enUsersTransactions UserTransaction);
+void PerformeUsersActions();
+void ReadUsersFromFile(vector<stUserAccount>& vUsers);
+string CreatUserAccountRecord(stUserAccount UserAccount);
+stUserAccount ReadUserAccount();
+stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/");
+
+
 
 void StartTheProgram();
 
@@ -146,6 +185,11 @@ bool IfTheAccountNumperFound(string AccountNumber) {
 	return false;
 }
 
+bool CheckAccesPermission(enMainMenuPermissions Permission) {
+	if (CurrentUser.Permission == enMainMenuPermissions::pAll)
+		return true;
+	return (CurrentUser.Permission & Permission) == Permission;
+}
 
 vector<string> SplitString(string S1, string delim) {
 
@@ -854,7 +898,7 @@ stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/") {
 		UA.Passowrd = vRecordData[1];
 	}
 	if (vRecordData.size() >= 3) {
-		UA.Permission = stoi(vRecordData[2]);
+		UA.Permission = enMainMenuPermissions(stoi(vRecordData[2]));
 	}
 
 	return UA;
@@ -884,26 +928,24 @@ bool IfTheUsernameAndPassFound(stUserAccount UserAccount) {
 	return false;
 }
 
-void loginToAccount(stUserAccount& UserAccount) {
+void LoginToAccount() {
 
-	UserAccount = ReadUserAccount();
+	CurrentUser = ReadUserAccount();
 
-	while (!IfTheUsernameAndPassFound(UserAccount)) {
+	while (!IfTheUsernameAndPassFound(CurrentUser)) {
 		system("cls");
 		PrintloginScreen();
 		cout << "Invalid Username/Passowrd!\n";
-		UserAccount = ReadUserAccount();
+		CurrentUser = ReadUserAccount();
 	}
 
 }
 
-stUserAccount LoginAction() {
-	stUserAccount User;
+void LoginAction() {
 	system("cls");
 	PrintloginScreen();
 
-	loginToAccount(User);
-	return User;
+	LoginToAccount();
 }
 
 void PrintManageUsresMainMenue() {
@@ -993,6 +1035,42 @@ bool IfUsernameFoundInFile(string Username) {
 	return false;
 }
 
+enMainMenuPermissions ReadUserPermission() {
+	enMainMenuPermissions Permission = pNoThing;
+	char chArr[8];int count = 0;
+	char All;
+
+	cout << "\nDo you want to gave this user full action? y/n? ";
+	cin >> All;
+	if (All == 'y')
+		return enMainMenuPermissions(-1);
+		
+	cout << "\nWhat the permission you want to gave it to this user ? \n";
+	cout << "[1] Show Client List ? y/n ? ";
+	cin >> chArr[count++];
+	cout << "\n[2] Add New Client ? y/n ?";
+	cin >> chArr[count++];
+	cout << "\n[3] Delete Client ? y/n ?";
+	cin >> chArr[count++];
+	cout << "\n[4] Update Client ? y/n ?";
+	cin >> chArr[count++];
+	cout << "\n[5] Find Client ? y/n ?";
+	cin >> chArr[count++];
+	cout << "\n[6] Transactions ? y/n ?";
+	cin >> chArr[count++];
+	cout << "\n[7] Manage Users ? y/n ?";
+	cin >> chArr[count++];
+
+	int p = 1;
+	for (int i = 0; i < count; i++) {
+		if (chArr[i] == 'y')
+			Permission = enMainMenuPermissions(Permission | enMainMenuPermissions(p));
+		p *= 2;
+	}
+
+	return Permission;
+}
+
 stUserAccount ReadNewUserInfo() {
 	stUserAccount UA;
 	cout << "Adding New User: \n\n";
@@ -1006,16 +1084,26 @@ stUserAccount ReadNewUserInfo() {
 		UA = ReadUserAccount();
 	}
 
+	UA.Permission = ReadUserPermission();
 
+}
 
+void AppendTheNewUserAccountRecordToFile(string UserAccountRecord) {
+	fstream MyFile;
+	MyFile.open(UsersFile, ios::out | ios::app);
+
+	if (MyFile.is_open()) {
+		MyFile << UserAccountRecord << endl;
+	}
 }
 
 void AddNewUserToFile() {
 	PrintAddNewUserScreen();
 	stUserAccount UserAccount = ReadNewUserInfo();
+	AppendTheNewUserAccountRecordToFile(CreatUserAccountRecord(UserAccount));
 }
 
-void PerformeUserTransaction(enUsersTransactions UserTransaction) {
+void PerformeUserAction(enUsersTransactions UserTransaction) {
 
 	switch (UserTransaction) {
 	case enUsersTransactions::ListUsers :
@@ -1023,6 +1111,8 @@ void PerformeUserTransaction(enUsersTransactions UserTransaction) {
 		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::AddNewuser:
+		AddNewUserToFile();
+		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::DeleteUser:
 		break;
@@ -1089,7 +1179,7 @@ void PrintEndCaption() {
 }
 
 void StartTheProgram() {
-	stUserAccount User = LoginAction();
+	LoginAction();
 
 	while (true) {
 		
