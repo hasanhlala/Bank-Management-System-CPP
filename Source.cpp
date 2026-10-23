@@ -49,6 +49,15 @@ enum enTransactions {
 	MainMenue =4
 };
 
+enum enUsersTransactions {
+	ListUsers = 1,
+	AddNewuser=2,
+	DeleteUser=3,
+	UpdateUser =4,
+	Finduser=5,
+	MainMenue = 6
+};
+
 vector<string> SplitString(string S1, string delim);
 stClientData ReadClientData();
 void PrintClientData(stClientData CD);
@@ -774,12 +783,31 @@ void PerformeTheTask(enTasks Task) {
 	case enTasks::ManageUsers:
 		break;
 	case enTasks::LogOut :
-		LoginMainMenu();
+		LoginAction();
 		break;
 		
 	}
 
 }
+
+void ReadUsersFromFile(vector<stUserAccount>& vUsers) {
+	fstream MyFile;
+	MyFile.open(UsersFile, ios::in);
+	
+	if (MyFile.is_open()) {
+		string line;
+		stUserAccount UA;
+
+		while (getline(MyFile, line)) {
+			UA = ParseRecordToUserAccount(line, "/#/");
+			vUsers.push_back(UA);
+		}
+
+		MyFile.close();
+	}
+
+	
+ }
 
 void PrintloginScreen() {
 	string LoginScreen = "Login Screen";
@@ -856,9 +884,9 @@ bool IfTheUsernameAndPassFound(stUserAccount UserAccount) {
 	return false;
 }
 
-void loginToAccount() {
+void loginToAccount(stUserAccount& UserAccount) {
 
-	stUserAccount UserAccount = ReadUserAccount();
+	UserAccount = ReadUserAccount();
 
 	while (!IfTheUsernameAndPassFound(UserAccount)) {
 		system("cls");
@@ -869,13 +897,154 @@ void loginToAccount() {
 
 }
 
-void LoginMainMenu() {
-
+stUserAccount LoginAction() {
+	stUserAccount User;
 	system("cls");
 	PrintloginScreen();
 
-	loginToAccount();
+	loginToAccount(User);
+	return User;
+}
+
+void PrintManageUsresMainMenue() {
+
+	string MainMenue = "Manage Users Main Menue";
+	int LineLength = 10 + MainMenue.length() + 10;
+
+	cout << string(LineLength, '=') << endl;
+	cout << string(10, ' ') << MainMenue << endl;
+	cout << string(LineLength, '=') << endl;
+
+	cout << string(5, ' ') << "[1] List Users.\n";
+	cout << string(5, ' ') << "[2] Add New User.\n";
+	cout << string(5, ' ') << "[3] Delete User.\n";
+	cout << string(5, ' ') << "[4] Update User.\n";
+	cout << string(5, ' ') << "[5] Find User.\n";
+	cout << string(5, ' ') << "[6] Main Menue.\n";
+	cout << string(LineLength, '=') << endl;
+}
+
+enUsersTransactions ReadUsersTransactions() {
+	int n;
+	cout << "\nEnter what you want to do (1 to 6) : ";
+	cin >> n;
+	return enUsersTransactions(n);
+}
+
+void PrintUserTableHeader(int Users) {
+	string Title = "Users List (" + to_string(Users) + ") User.";
+	int LineLength = 15 + Title.length() + 15;
+	cout << string(15, ' ') << Title  << endl;
+	cout << string(LineLength, '_') << endl;
+	cout << " |" << setw(14) << left << "User Name";
+	cout << " |" << setw(10) << left << "Passowrd";
+	cout << " |" << setw(14) << left << "Permission" << endl;
 	
+}
+
+void PrintUserRow(stUserAccount& UA) {
+	cout << " |" << setw(14) << left << UA.UserName;
+	cout << " |" << setw(14) << left << UA.Passowrd;
+	cout << " |" << setw(14) << left << UA.Permission;
+}
+
+void PrintUsersListTable(vector <stUserAccount>& vUsers) {
+	PrintUserTableHeader(vUsers.size());
+
+	for (int i = 0; i < vUsers.size(); i++) {
+		PrintUserRow(vUsers[i]);
+		cout << "\n";
+	}
+}
+
+void DisplayAllUsersAccount() {
+	vector <stUserAccount> vUsers;
+	ReadUsersFromFile(vUsers);
+	PrintUsersListTable(vUsers);
+}
+
+void ReturnToUsersActionsMainMenu() {
+	cout << "\nPress Any Key to return to Users Actions Main Menue....\n";
+	system("pause>0");
+}
+
+void PrintAddNewUserScreen() {
+	string Title = "Add New User Screen";
+	int LineLength = 10 + Title.length() + 10;
+	cout << string(LineLength, '-') << endl;
+	cout << string(10, ' ') << Title << endl;
+	cout << string(LineLength, '-') << endl;
+}
+
+bool IfUsernameFoundInFile(string Username) {
+	fstream MyFile;
+	MyFile.open(UsersFile, ios::in);
+
+	if (MyFile.is_open()) {
+		string line;
+		stUserAccount UA;
+		while (getline(MyFile, line)) {
+			UA = ParseRecordToUserAccount(line, "/#/");
+			if (UA.UserName == Username)
+				return true;
+		}
+		MyFile.close();
+	}
+	return false;
+}
+
+stUserAccount ReadNewUserInfo() {
+	stUserAccount UA;
+	cout << "Adding New User: \n\n";
+	UA = ReadUserAccount();
+	
+	while (IfUsernameFoundInFile(UA.UserName)) {
+		system("cls");
+		PrintAddNewUserScreen();
+		cout << "The Username is already found in the file!!\n";
+		cout << "Please enter another one...\n";
+		UA = ReadUserAccount();
+	}
+
+
+
+}
+
+void AddNewUserToFile() {
+	PrintAddNewUserScreen();
+	stUserAccount UserAccount = ReadNewUserInfo();
+}
+
+void PerformeUserTransaction(enUsersTransactions UserTransaction) {
+
+	switch (UserTransaction) {
+	case enUsersTransactions::ListUsers :
+		DisplayAllUsersAccount();
+		ReturnToUsersActionsMainMenu();
+		break;
+	case enUsersTransactions::AddNewuser:
+		break;
+	case enUsersTransactions::DeleteUser:
+		break;
+	case enUsersTransactions::UpdateUser:
+		break;
+	case enUsersTransactions::Finduser:
+		break;
+	case enUsersTransactions::MainMenue:
+		ReturnToMainMenue();
+		break;
+	}
+}
+
+void PerformeUsersActions() {
+
+	bool PerformeMore = true;
+	while (PerformeMore) {
+		system("cls");
+		PrintManageUsresMainMenue();
+		enUsersTransactions UT = ReadUsersTransactions();
+
+	}
 }
 
 enTasks WhatTheTask() {
@@ -920,8 +1089,7 @@ void PrintEndCaption() {
 }
 
 void StartTheProgram() {
-	
-	LoginMainMenu();
+	stUserAccount User = LoginAction();
 
 	while (true) {
 		
