@@ -15,7 +15,6 @@ using namespace std;
 
 string ClientsFile = "ClientsData";
 string UsersFile = "UsersFile";
-stUserAccount CurrentUser;
 
 struct stClientData {
 	string AccountNumber;
@@ -143,7 +142,7 @@ void AppendTheNewUserAccountRecordToFile(string UserAccountRecord);
 enMainMenuPermissions ReadUserPermission();
 bool CheckAccesPermission(enMainMenuPermissions Permission);
 
-
+stUserAccount CurrentUser;
 void StartTheProgram();
 
 
@@ -1096,7 +1095,7 @@ stUserAccount ReadNewUserInfo() {
 	}
 
 	UA.Permission = ReadUserPermission();
-
+	
 }
 
 void AppendTheNewUserAccountRecordToFile(string UserAccountRecord) {
@@ -1228,6 +1227,54 @@ void UpdateUserAccount() {
 	LoadUsersAccountsFromVectorToFile(vUsers);
 }
 
+void PrintFindUserScreen() {
+	string Title = "Find User";
+	int LineLength = 10 + Title.length() + 10;
+	cout << string(LineLength, '-') << endl;
+	cout << string(10, ' ') << endl;
+	cout << string(LineLength, '-') << endl;
+}
+
+string ReadUsername() {
+	string username;
+	cout << "\nEnetr the username you want it : ";
+	cin >> username;
+	return username;
+}
+
+void PrintSingleUserAccount(stUserAccount& UA) {
+	
+	cout << "\n\n";
+	cout << string(25, '=') << endl;
+	cout << "        Username: " << UA.UserName << endl;
+	cout << "        Passowrd: " << UA.Passowrd << endl;
+	cout << string(25, '=') << endl;
+	cout << "\n\n";
+ }
+
+stUserAccount CopyUserAccountFromVector(vector<stUserAccount> vUsers,string Username) {
+	for (int i = 0; i < vUsers.size(); i++) {
+		if (vUsers[i].UserName == Username)
+			return vUsers[i];
+	}
+}
+
+void FindUserAccountFromFile() {
+	PrintFindUserScreen();
+	string UserName = ReadUsername();
+
+	while (!IfUsernameFoundInFile(UserName)) {
+		cout << "\nThe Username you enterd it didnt found!!\n";
+		cout << "Please enter anothe one...\n";
+		UserName = ReadUsername();
+	}
+
+	vector <stUserAccount> vUsers;
+	ReadUsersFromFile(vUsers);
+	stUserAccount UA = CopyUserAccountFromVector(vUsers, UserName);
+	PrintSingleUserAccount(UA);
+}
+
 void PerformeUserTransactions(enUsersTransactions UserTransaction) {
 
 	switch (UserTransaction) {
@@ -1248,6 +1295,8 @@ void PerformeUserTransactions(enUsersTransactions UserTransaction) {
 		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::Finduser:
+		FindUserAccountFromFile();
+		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::MainMenue:
 		ReturnToMainMenue();
