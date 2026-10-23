@@ -21,42 +21,8 @@ struct stClientData {
 	string PinCode;
 	string Name;
 	string Phone;
-	int AccountBalance;
+	int AccountBalance = 0;
 	bool MarkForDelete = false;
-};
-
-struct stUserAccount {
-	string UserName;
-	string Passowrd;
-	enMainMenuPermissions Permission;
-	bool MarkForDelete = false;
-};
-
-enum enTasks {
-	ChowClientList = 1,
-	AddNewClient = 2,
-	DeleteClient = 3,
-	UpdateClientInfo = 4,
-	FindClient = 5,
-	Transactions = 6,
-	ManageUsers = 7,
-	LogOut = 8
-};
-
-enum enTransactions {
-	Deposit = 1,
-	Withdraw = 2,
-	TotalBalance = 3,
-	MainMenue = 4
-};
-
-enum enUsersTransactions {
-	ListUsers = 1,
-	AddNewuser = 2,
-	DeleteUser = 3,
-	UpdateUser = 4,
-	Finduser = 5,
-	MainMenue = 6
 };
 
 enum enMainMenuPermissions {
@@ -67,10 +33,44 @@ enum enMainMenuPermissions {
 	pDeleteClient = 4,
 	pUpdateClient = 8,
 	pFindClient = 16,
-	pTransactons = 32,
-	pManageUsers = 64,
-
+	pTransactions = 32,
+	pManageUsers = 64
 };
+
+struct stUserAccount {
+	string UserName;
+	string Passowrd;
+	enMainMenuPermissions Permission = enMainMenuPermissions::pNoThing;
+	bool MarkForDelete = false;
+};
+
+enum enTasks {
+	tShowClientList = 1,
+	tAddNewClient = 2,
+	tDeleteClient = 3,
+	tUpdateClient = 4,
+	tFindClient = 5,
+	tTransactions = 6,
+	tManageUsers = 7,
+	tLogOut = 8
+};
+
+enum enTransactions {
+	trDeposit = 1,
+	trWithdraw = 2,
+	trTotalBalance = 3,
+	trMainMenu = 4
+};
+
+enum enUsersTransactions {
+	utListUsers = 1,
+	utAddNewUser = 2,
+	utDeleteUser = 3,
+	utUpdateUser = 4,
+	utFindUser = 5,
+	utMainMenu = 6
+};
+
 
 
 
@@ -79,7 +79,7 @@ stClientData ReadClientData();
 void PrintClientData(stClientData CD);
 void AppendClientRecordToFile(string Record);
 string CreateClientRecord(stClientData CD, string Diameter);
-stClientData ParseRecordToClient(string Record,string Diameter);
+stClientData ParseRecordToClient(string Record, string Diameter);
 void WriteClientsToFile(vector <stClientData>& vClients);
 void ReadClientsFromFile(vector<stClientData>& vClients);
 void PrintClientTableHeader(int Count);
@@ -118,7 +118,7 @@ void PrintWithdrawScreen();
 void WithdrawFromClient();
 void PrintloginScreen();
 bool IfTheUsernameAndPassFound(stUserAccount UserAccount);
-void LoginToAccount(stUserAccount& UserAccount);
+void LoginToAccount();
 void LoginAction();
 void PrintManageUsresMainMenue();
 enUsersTransactions ReadUsersTransactions();
@@ -127,12 +127,11 @@ void PrintUserRow(stUserAccount& UA);
 void PrintUsersListTable(vector <stUserAccount>& vUsers);
 void DisplayAllUsersAccount();
 void ReturnToUsersActionsMainMenu();
-void ReturnToUsersActionsMainMenu();
 void PrintAddNewUserScreen();
 bool IfUsernameFoundInFile(string Username);
 stUserAccount ReadNewUserInfo();
 void InteractiveAddSingleUserAccount();
-void PerformeUserTransactions(enUsersTransactions UserTransaction);
+void PerformeUserTransactions(enUsersTransactions UserTransaction, bool& PerformeMore);
 void PerformeUsersTransactions();
 void ReadUsersFromFile(vector<stUserAccount>& vUsers);
 string CreatUserAccountRecord(stUserAccount UserAccount);
@@ -141,6 +140,26 @@ stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/");
 void AppendTheNewUserAccountRecordToFile(string UserAccountRecord);
 enMainMenuPermissions ReadUserPermission();
 bool CheckAccesPermission(enMainMenuPermissions Permission);
+bool HasAccessOrDeny(enMainMenuPermissions Permission);
+string ReadUsername();
+bool IfTheAccountNumperFound(string AccountNumber);
+void PrintSuccesOfTheOperationMessage(string Message);
+void ReturnToMainMenue();
+void InteractiveAddMultiUsersAccounts();
+void PrintDeleteScreen();
+void MarkUserAccountForDelete(vector <stUserAccount>& vUsers, string Username);
+void LoadUsersAccountsFromVectorToFile(vector<stUserAccount>& vUsers);
+void InteractiveDeleteSingleUserAccount(vector <stUserAccount>& vUsers);
+void InteractiveDeleteMultiUsersAccounts();
+void PrintUpdateUserAccountScreen();
+void UpdateAccountInfo(stUserAccount& UAA);
+void ReplaceAccountWithUpdatedAccount(vector<stUserAccount>& vUsers, stUserAccount UAA);
+void UpdateUserAccount();
+void PrintFindUserScreen();
+void PrintSingleUserAccount(stUserAccount& UA);
+stUserAccount CopyUserAccountFromVector(vector<stUserAccount> vUsers, string Username);
+void FindUserAccountFromFile();
+void CreateDefaultAdminIfNoUsers();
 
 stUserAccount CurrentUser;
 void StartTheProgram();
@@ -197,10 +216,10 @@ vector<string> SplitString(string S1, string delim) {
 
 	vector <string> vString;
 
-	short pos = 0;
+	size_t pos = 0;
 	string sWord;
 
-	while ((pos = S1.find(delim)) != std::string::npos) {
+	while ((pos = S1.find(delim)) != string::npos) {
 
 		sWord = S1.substr(0, pos);
 		if (sWord != "") {
@@ -211,7 +230,7 @@ vector<string> SplitString(string S1, string delim) {
 
 	}
 
-	if (S1 != " ") {
+	if (S1 != "") {
 		vString.push_back(S1);
 	}
 
@@ -221,7 +240,7 @@ vector<string> SplitString(string S1, string delim) {
 
 stClientData ReadClientData() {
 	stClientData CD;
-    cout << "Enter Account Number? ";
+	cout << "Enter Account Number? ";
 	getline(cin >> ws, CD.AccountNumber);
 	while (IfTheAccountNumperFound(CD.AccountNumber)) {
 		cout << "\nThe Account Numper " << CD.AccountNumber << " found in the file...\n";
@@ -256,7 +275,7 @@ void PrintSuccesOfTheOperationMessage(string Message) {
 	int LineLength = 10 + Message.length() + 10;
 	cout << "\n\n";
 	cout << string(LineLength, '-') << endl;
-	cout << string(10,' ') << Message << endl;
+	cout << string(10, ' ') << Message << endl;
 	cout << string(LineLength, '-') << endl;
 }
 
@@ -289,14 +308,13 @@ string CreateClientRecord(stClientData CD, string Diameter) {
 
 }
 
-stClientData ParseRecordToClient(string Record, string Diameter = "/#/") {
+stClientData ParseRecordToClient(string Record, string Diameter) {
 
-	vector<string> vRecordData = { "" };
-	vRecordData = SplitString(Record, Diameter);
+	vector<string> vRecordData = SplitString(Record, Diameter);
 
 	stClientData ClientData;
 
-	if (vRecordData.size() == 0) {
+	if (vRecordData.empty()) {
 		return ClientData;
 	}
 
@@ -312,7 +330,7 @@ stClientData ParseRecordToClient(string Record, string Diameter = "/#/") {
 		ClientData.Phone = vRecordData[3];
 	}
 	if (vRecordData.size() >= 5) {
-		ClientData.AccountBalance = stod(vRecordData[4]);
+		ClientData.AccountBalance = stoi(vRecordData[4]);
 	}
 
 	return ClientData;
@@ -345,8 +363,9 @@ void ReadClientsFromFile(vector<stClientData>& vClients) {
 		stClientData client;
 
 		while (getline(MyFile, line)) {
-			client = ParseRecordToClient(line,"/#/");
-			vClients.push_back(client);
+			client = ParseRecordToClient(line, "/#/");
+			if (!line.empty())
+				vClients.push_back(client);
 
 		}
 
@@ -405,7 +424,7 @@ void InteractiveAddMultipleClients() {
 	do {
 		system("cls");
 		cout << "Add new client : " << endl;
-        InteractiveAddSingleClient();
+		InteractiveAddSingleClient();
 		cout << "\nWant to add more client ? ";
 		cin >> MoreClients;
 	} while (toupper(MoreClients) == 'Y');
@@ -486,7 +505,7 @@ void InteractiveDeleteMultipleClients() {
 		cin >> wantToDelete;
 
 		deleteSuccess = false;
-        if (toupper(wantToDelete) == 'Y') {
+		if (toupper(wantToDelete) == 'Y') {
 			DeleteClientFromFileByAccountNumber(accountNumber, deleteSuccess);
 		}
 
@@ -501,31 +520,31 @@ void InteractiveDeleteMultipleClients() {
 		cin >> deleteMore;
 
 	} while (toupper(deleteMore) == 'Y');
-    
+
 	cout << endl;
 }
 
 stClientData FindClientInFileByAccountNumber(string AccountNumber) {
 
-	string Record = "";
-
 	fstream MyFile;
-    MyFile.open(ClientsFile, ios::in);
+	MyFile.open(ClientsFile, ios::in);
 
 	if (MyFile.is_open()) {
 		string line;
-		stClientData CD = {};
+		stClientData CD;
 
 		while (getline(MyFile, line)) {
-			CD = ParseRecordToClient(line,"/#/");
-			if (CD.AccountNumber == AccountNumber)
+			CD = ParseRecordToClient(line, "/#/");
+			if (CD.AccountNumber == AccountNumber) {
+				MyFile.close();
 				return CD;
+			}
 		}
 
 		MyFile.close();
 	}
 
-
+	return stClientData();
 }
 
 void FindClientByAccountNumber() {
@@ -561,9 +580,7 @@ void UpdateClientInVector(vector <stClientData>& vClients, string AccountNumber)
 
 void UpdateClientInformation() {
 	system("cls");
-	string AccountNumber;
-	cout << "Enter the Account Number of client you want to update it : ";
-	cin >> AccountNumber;
+	string AccountNumber = ReadAccountNumber();
 
 	vector <stClientData> vClients;
 
@@ -593,7 +610,7 @@ void PrintDepositScreen() {
 
 string ReadAccountNumber() {
 	string AccountNumber;
-	
+
 	cout << "Enter the Account Number : ";
 	cin >> AccountNumber;
 
@@ -622,13 +639,13 @@ void DepositInClient() {
 
 	cout << "The Following are the client data : ";
 	PrintClientData(vClients[Index]);
-	
+
 	int DepositAmmount = 0;
 	cout << "Please enter a deposit ammount : ";
 	cin >> DepositAmmount;
 
 	char SureDeposit;
-	cout << "Are you sure you want to add " << DepositAmmount << "to this Account ? y/n: ";
+	cout << "Are you sure you want to add " << DepositAmmount << " to this Account ? y/n: ";
 	cin >> SureDeposit;
 	if (toupper(SureDeposit) == 'Y') {
 		vClients[Index].AccountBalance += DepositAmmount;
@@ -663,8 +680,8 @@ void WithdrawFromClient() {
 
 	vector <stClientData> vClients;
 	ReadClientsFromFile(vClients);
-	
-	int Index = FindClientIndexInVector(vClients,AccountNumber);
+
+	int Index = FindClientIndexInVector(vClients, AccountNumber);
 
 	cout << "The following are the clients details : \n";
 	PrintClientData(vClients[Index]);
@@ -705,7 +722,7 @@ long long SumOfTotalBalance(vector <stClientData>& vClients) {
 
 }
 
-void PrintClientBalanceTableHeader(int Count,int &LineLength) {
+void PrintClientBalanceTableHeader(int Count, int& LineLength) {
 	const int totalWidth = 2 + 14 + 2 + 40 + 2 + 14 + 2; // compute rough width including separators
 	cout << "\n\t\t\t\tBalance List (" << Count << ") Client(s)." << endl;
 	cout << string(totalWidth, '_') << "\n\n";
@@ -719,17 +736,17 @@ void PrintClientBalanceTableHeader(int Count,int &LineLength) {
 }
 
 void PrintClientBalanceTable(vector <stClientData>& vClients) {
-	
+
 	int LineLength = 0;
 
-	PrintClientBalanceTableHeader(vClients.size(),LineLength);
+	PrintClientBalanceTableHeader(vClients.size(), LineLength);
 	if (vClients.size() != 0) {
 		for (size_t i = 0; i < vClients.size(); i++) {
 			PrintClientBalanceRow(vClients[i]);
 			cout << "\n";
 		}
 	}
-	
+
 	string TotalBalanceString = "Total Balance = ";
 	cout << "\n";
 	cout << string((LineLength / 2) - (TotalBalanceString.length() / 2), ' ') << "Total Balance = " << SumOfTotalBalance(vClients);
@@ -751,24 +768,24 @@ void DisplayTotalBalance() {
 
 }
 
-void PerformeTransaction(enTransactions Trans,bool &PerformeMore) {
+void PerformeTransaction(enTransactions Trans, bool& PerformeMore) {
 
 	system("cls");
 
 	switch (Trans) {
-	case enTransactions::Deposit:
+	case enTransactions::trDeposit:
 		DepositInClient();
 		ReturnToTransactionsMainMenue();
 		break;
-	case enTransactions::Withdraw :
+	case enTransactions::trWithdraw:
 		WithdrawFromClient();
 		ReturnToTransactionsMainMenue();
 		break;
-	case enTransactions::TotalBalance :
+	case enTransactions::trTotalBalance:
 		DisplayTotalBalance();
 		ReturnToTransactionsMainMenue();
 		break;
-	case enTransactions::MainMenue :
+	case enTransactions::trMainMenu:
 		PerformeMore = false;
 		break;
 	}
@@ -802,8 +819,21 @@ void PerformeTransactions() {
 		system("cls");
 		PrintTransactionsMainMenue();
 		Trans = ReadTheTransaction();
-		PerformeTransaction(Trans,PerformeMore);
+		PerformeTransaction(Trans, PerformeMore);
 	}
+}
+
+bool HasAccessOrDeny(enMainMenuPermissions Permission) {
+	if (CheckAccesPermission(Permission))
+		return true;
+
+	string Message = "Access Denied! You don't have permission to do this.";
+	int LineLength = Message.length() + 10;
+	cout << string(LineLength, '-') << endl;
+	cout << string(5, ' ') << Message << endl;
+	cout << string(LineLength, '-') << endl;
+	cout << "Please contact your admin.\n";
+	return false;
 }
 
 void PerformeTheTask(enTasks Task) {
@@ -811,35 +841,46 @@ void PerformeTheTask(enTasks Task) {
 	system("cls");
 
 	switch (Task) {
-	case enTasks::ChowClientList:
-        DisplayAllClientsFromFile();
+	case enTasks::tShowClientList:
+		if (HasAccessOrDeny(enMainMenuPermissions::pListClients))
+			DisplayAllClientsFromFile();
 		ReturnToMainMenue();
 		break;
-	case enTasks::AddNewClient:
-        InteractiveAddMultipleClients();
+	case enTasks::tAddNewClient:
+		if (HasAccessOrDeny(enMainMenuPermissions::pAddNewClient))
+			InteractiveAddMultipleClients();
 		ReturnToMainMenue();
 		break;
-	case enTasks::DeleteClient:
-        InteractiveDeleteMultipleClients();
+	case enTasks::tDeleteClient:
+		if (HasAccessOrDeny(enMainMenuPermissions::pDeleteClient))
+			InteractiveDeleteMultipleClients();
 		ReturnToMainMenue();
 		break;
-	case enTasks::FindClient:
-        FindClientByAccountNumber();
+	case enTasks::tUpdateClient:
+		if (HasAccessOrDeny(enMainMenuPermissions::pUpdateClient))
+			UpdateClientInformation();
 		ReturnToMainMenue();
 		break;
-	case enTasks::UpdateClientInfo:
-        UpdateClientInformation();
+	case enTasks::tFindClient:
+		if (HasAccessOrDeny(enMainMenuPermissions::pFindClient))
+			FindClientByAccountNumber();
 		ReturnToMainMenue();
 		break;
-	case enTasks::Transactions :
-		PerformeTransactions();
-		ReturnToMainMenue();
-	case enTasks::ManageUsers:
+	case enTasks::tTransactions:
+		if (HasAccessOrDeny(enMainMenuPermissions::pTransactions))
+			PerformeTransactions();
+		else
+			ReturnToMainMenue();
 		break;
-	case enTasks::LogOut :
+	case enTasks::tManageUsers:
+		if (HasAccessOrDeny(enMainMenuPermissions::pManageUsers))
+			PerformeUsersTransactions();
+		else
+			ReturnToMainMenue();
+		break;
+	case enTasks::tLogOut:
 		LoginAction();
 		break;
-		
 	}
 
 }
@@ -847,21 +888,22 @@ void PerformeTheTask(enTasks Task) {
 void ReadUsersFromFile(vector<stUserAccount>& vUsers) {
 	fstream MyFile;
 	MyFile.open(UsersFile, ios::in);
-	
+
 	if (MyFile.is_open()) {
 		string line;
 		stUserAccount UA;
 
 		while (getline(MyFile, line)) {
 			UA = ParseRecordToUserAccount(line, "/#/");
-			vUsers.push_back(UA);
+			if (!line.empty())
+				vUsers.push_back(UA);
 		}
 
 		MyFile.close();
 	}
 
-	
- }
+
+}
 
 void PrintloginScreen() {
 	string LoginScreen = "Login Screen";
@@ -876,7 +918,7 @@ string CreatUserAccountRecord(stUserAccount UserAccount) {
 	string SUA = "";
 	SUA += UserAccount.UserName + "/#/"
 		+ UserAccount.Passowrd + "/#/"
-		+ to_string(UserAccount.Permission);
+		+ to_string((int)UserAccount.Permission);
 
 	return SUA;
 }
@@ -885,20 +927,19 @@ stUserAccount ReadUserAccount() {
 	stUserAccount UserAccount;
 	cout << "Enter Username? ";
 	cin >> UserAccount.UserName;
-	cout << "Enter Passoerd? ";
+	cout << "Enter Password? ";
 	cin >> UserAccount.Passowrd;
 
 	return UserAccount;
 }
 
-stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/") {
+stUserAccount ParseRecordToUserAccount(string Record, string Diameter) {
 
-	vector<string> vRecordData = { "" };
-	vRecordData = SplitString(Record, Diameter);
+	vector<string> vRecordData = SplitString(Record, Diameter);
 
 	stUserAccount UA;
 
-	if (vRecordData.size() == 0) {
+	if (vRecordData.empty()) {
 		return UA;
 	}
 
@@ -916,24 +957,23 @@ stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/") {
 
 
 bool IfTheUsernameAndPassFound(stUserAccount UserAccount) {
-	
-	string Record = "";
 
 	fstream MyFile;
 	MyFile.open(UsersFile, ios::in);
 
 	if (MyFile.is_open()) {
 		string line;
-		stUserAccount UA = {};
+		stUserAccount UA;
 
 		while (getline(MyFile, line)) {
 			UA = ParseRecordToUserAccount(line, "/#/");
-			if (UA.UserName == UserAccount.UserName && UA.Passowrd == UserAccount.Passowrd);
+			if (UA.UserName == UserAccount.UserName && UA.Passowrd == UserAccount.Passowrd) {
+				MyFile.close();
 				return true;
+			}
 		}
 
 		MyFile.close();
-		
 	}
 	return false;
 }
@@ -945,8 +985,18 @@ void LoginToAccount() {
 	while (!IfTheUsernameAndPassFound(CurrentUser)) {
 		system("cls");
 		PrintloginScreen();
-		cout << "Invalid Username/Passowrd!\n";
+		cout << "Invalid Username/Password!\n";
 		CurrentUser = ReadUserAccount();
+	}
+
+	// load the full account (with its permissions) from the file
+	vector<stUserAccount> vUsers;
+	ReadUsersFromFile(vUsers);
+	for (int i = 0; i < vUsers.size(); i++) {
+		if (vUsers[i].UserName == CurrentUser.UserName) {
+			CurrentUser = vUsers[i];
+			break;
+		}
 	}
 
 }
@@ -986,12 +1036,12 @@ enUsersTransactions ReadUsersTransactions() {
 void PrintUserTableHeader(int Users) {
 	string Title = "Users List (" + to_string(Users) + ") User.";
 	int LineLength = 15 + Title.length() + 15;
-	cout << string(15, ' ') << Title  << endl;
+	cout << string(15, ' ') << Title << endl;
 	cout << string(LineLength, '_') << endl;
 	cout << " |" << setw(14) << left << "User Name";
 	cout << " |" << setw(10) << left << "Passowrd";
 	cout << " |" << setw(14) << left << "Permission" << endl;
-	
+
 }
 
 void PrintUserRow(stUserAccount& UA) {
@@ -1046,46 +1096,34 @@ bool IfUsernameFoundInFile(string Username) {
 }
 
 enMainMenuPermissions ReadUserPermission() {
-	enMainMenuPermissions Permission = pNoThing;
-	char chArr[8];int count = 0;
-	char All;
+	char Answer;
 
-	cout << "\nDo you want to gave this user full action? y/n? ";
-	cin >> All;
-	if (All == 'y')
-		return enMainMenuPermissions(-1);
-		
-	cout << "\nWhat the permission you want to gave it to this user ? \n";
-	cout << "[1] Show Client List ? y/n ? ";
-	cin >> chArr[count++];
-	cout << "\n[2] Add New Client ? y/n ?";
-	cin >> chArr[count++];
-	cout << "\n[3] Delete Client ? y/n ?";
-	cin >> chArr[count++];
-	cout << "\n[4] Update Client ? y/n ?";
-	cin >> chArr[count++];
-	cout << "\n[5] Find Client ? y/n ?";
-	cin >> chArr[count++];
-	cout << "\n[6] Transactions ? y/n ?";
-	cin >> chArr[count++];
-	cout << "\n[7] Manage Users ? y/n ?";
-	cin >> chArr[count++];
+	cout << "\nDo you want to give this user full access? y/n? ";
+	cin >> Answer;
+	if (toupper(Answer) == 'Y')
+		return enMainMenuPermissions::pAll;
 
-	int p = 1;
-	for (int i = 0; i < count; i++) {
-		if (chArr[i] == 'y')
-			Permission = enMainMenuPermissions(Permission | enMainMenuPermissions(p));
-		p *= 2;
+	const string Questions[7] = { "Show Client List", "Add New Client", "Delete Client",
+		"Update Client", "Find Client", "Transactions", "Manage Users" };
+
+	int Permission = 0;
+
+	cout << "\nWhat permissions do you want to give this user ? \n";
+	for (int i = 0; i < 7; i++) {
+		cout << "[" << i + 1 << "] " << Questions[i] << " ? y/n ? ";
+		cin >> Answer;
+		if (toupper(Answer) == 'Y')
+			Permission |= (1 << i);
 	}
 
-	return Permission;
+	return (enMainMenuPermissions)Permission;
 }
 
 stUserAccount ReadNewUserInfo() {
 	stUserAccount UA;
 	cout << "Adding New User: \n\n";
 	UA = ReadUserAccount();
-	
+
 	while (IfUsernameFoundInFile(UA.UserName)) {
 		system("cls");
 		PrintAddNewUserScreen();
@@ -1095,7 +1133,8 @@ stUserAccount ReadNewUserInfo() {
 	}
 
 	UA.Permission = ReadUserPermission();
-	
+
+	return UA;
 }
 
 void AppendTheNewUserAccountRecordToFile(string UserAccountRecord) {
@@ -1114,7 +1153,7 @@ void InteractiveAddSingleUserAccount() {
 
 void InteractiveAddMultiUsersAccounts() {
 	char AddMore = 'y';
-	while (toupper(AddMore)) {
+	while (toupper(AddMore) == 'Y') {
 		system("cls");
 		PrintAddNewUserScreen();
 		InteractiveAddSingleUserAccount();
@@ -1158,16 +1197,18 @@ void LoadUsersAccountsFromVectorToFile(vector<stUserAccount>& vUsers) {
 }
 
 void InteractiveDeleteSingleUserAccount(vector <stUserAccount>& vUsers) {
-	cout << "\nEnter the account you want to delete it : \n";
-	stUserAccount UserAccountDelete = ReadUserAccount();
+	string UserName = ReadUsername();
 
-	while (!IfUsernameFoundInFile(UserAccountDelete.UserName)) {
-		cout << "\nuncorrect Username/Passowrd!!\n";
+	while (!IfUsernameFoundInFile(UserName) || UserName == "Admin") {
+		if (UserName == "Admin")
+			cout << "\nThe Admin account can't be deleted!!\n";
+		else
+			cout << "\nThe Username was not found!!\n";
 		cout << "Please Enter Again...\n";
-		UserAccountDelete = ReadUserAccount();
+		UserName = ReadUsername();
 	}
 
-	MarkUserAccountForDelete(vUsers, UserAccountDelete.UserName);
+	MarkUserAccountForDelete(vUsers, UserName);
 }
 
 void InteractiveDeleteMultiUsersAccounts() {
@@ -1201,7 +1242,7 @@ void UpdateAccountInfo(stUserAccount& UAA) {
 	UAA.Permission = ReadUserPermission();
 }
 
-void ReplaceAccountWithUpdatedAccount(vector<stUserAccount>& vUsers,stUserAccount UAA) {
+void ReplaceAccountWithUpdatedAccount(vector<stUserAccount>& vUsers, stUserAccount UAA) {
 	for (int i = 0; i < vUsers.size(); i++) {
 		if (vUsers[i].UserName == UAA.UserName) {
 			vUsers[i] = UAA;
@@ -1212,26 +1253,34 @@ void ReplaceAccountWithUpdatedAccount(vector<stUserAccount>& vUsers,stUserAccoun
 
 void UpdateUserAccount() {
 	PrintUpdateUserAccountScreen();
-	stUserAccount UserAccountUpdate = ReadUserAccount();
+	string UserName = ReadUsername();
 
-	while (!IfTheUsernameAndPassFound(UserAccountUpdate)) {
-		cout << "\nUncorrect Username/Passowrd!!\n";
+	while (!IfUsernameFoundInFile(UserName)) {
+		cout << "\nThe Username was not found!!\n";
 		cout << "Please Enter a correct one...\n";
-		UserAccountUpdate = ReadUserAccount();
+		UserName = ReadUsername();
 	}
+
+	stUserAccount UserAccountUpdate;
+	UserAccountUpdate.UserName = UserName;
 	UpdateAccountInfo(UserAccountUpdate);
-	PrintSuccesOfTheOperationMessage("The Update Opration are completed succefully..");
+
 	vector<stUserAccount> vUsers;
 	ReadUsersFromFile(vUsers);
-	ReplaceAccountWithUpdatedAccount(vUsers,UserAccountUpdate);
+	ReplaceAccountWithUpdatedAccount(vUsers, UserAccountUpdate);
 	LoadUsersAccountsFromVectorToFile(vUsers);
+
+	if (UserAccountUpdate.UserName == CurrentUser.UserName)
+		CurrentUser = UserAccountUpdate;
+
+	PrintSuccesOfTheOperationMessage("The Update Opration are completed succefully..");
 }
 
 void PrintFindUserScreen() {
 	string Title = "Find User";
 	int LineLength = 10 + Title.length() + 10;
 	cout << string(LineLength, '-') << endl;
-	cout << string(10, ' ') << endl;
+	cout << string(10, ' ') << Title << endl;
 	cout << string(LineLength, '-') << endl;
 }
 
@@ -1243,20 +1292,21 @@ string ReadUsername() {
 }
 
 void PrintSingleUserAccount(stUserAccount& UA) {
-	
+
 	cout << "\n\n";
 	cout << string(25, '=') << endl;
 	cout << "        Username: " << UA.UserName << endl;
 	cout << "        Passowrd: " << UA.Passowrd << endl;
 	cout << string(25, '=') << endl;
 	cout << "\n\n";
- }
+}
 
-stUserAccount CopyUserAccountFromVector(vector<stUserAccount> vUsers,string Username) {
+stUserAccount CopyUserAccountFromVector(vector<stUserAccount> vUsers, string Username) {
 	for (int i = 0; i < vUsers.size(); i++) {
 		if (vUsers[i].UserName == Username)
 			return vUsers[i];
 	}
+	return stUserAccount();
 }
 
 void FindUserAccountFromFile() {
@@ -1275,31 +1325,33 @@ void FindUserAccountFromFile() {
 	PrintSingleUserAccount(UA);
 }
 
-void PerformeUserTransactions(enUsersTransactions UserTransaction) {
+void PerformeUserTransactions(enUsersTransactions UserTransaction, bool& PerformeMore) {
+
+	system("cls");
 
 	switch (UserTransaction) {
-	case enUsersTransactions::ListUsers :
+	case enUsersTransactions::utListUsers:
 		DisplayAllUsersAccount();
 		ReturnToUsersActionsMainMenu();
 		break;
-	case enUsersTransactions::AddNewuser:
+	case enUsersTransactions::utAddNewUser:
 		InteractiveAddMultiUsersAccounts();
 		ReturnToUsersActionsMainMenu();
 		break;
-	case enUsersTransactions::DeleteUser:
+	case enUsersTransactions::utDeleteUser:
 		InteractiveDeleteMultiUsersAccounts();
 		ReturnToUsersActionsMainMenu();
 		break;
-	case enUsersTransactions::UpdateUser:
+	case enUsersTransactions::utUpdateUser:
 		UpdateUserAccount();
 		ReturnToUsersActionsMainMenu();
 		break;
-	case enUsersTransactions::Finduser:
+	case enUsersTransactions::utFindUser:
 		FindUserAccountFromFile();
 		ReturnToUsersActionsMainMenu();
 		break;
-	case enUsersTransactions::MainMenue:
-		ReturnToMainMenue();
+	case enUsersTransactions::utMainMenu:
+		PerformeMore = false;
 		break;
 	}
 }
@@ -1311,14 +1363,14 @@ void PerformeUsersTransactions() {
 		system("cls");
 		PrintManageUsresMainMenue();
 		enUsersTransactions UT = ReadUsersTransactions();
-		PerformeUserTransactions(UT);
+		PerformeUserTransactions(UT, PerformeMore);
 	}
 }
 
 enTasks WhatTheTask() {
 
 	int n;
-	cout << "\nEnter The number (1 to 7) ? ";
+	cout << "\nEnter The number (1 to 8) ? ";
 	cin >> n;
 	return (enTasks)n;
 
@@ -1339,7 +1391,8 @@ void PrintTheMainMenu() {
 	cout << string(5, ' ') << "[4] Update Client\n";
 	cout << string(5, ' ') << "[5] Find Client.\n";
 	cout << string(5, ' ') << "[6] Transactions.\n";
-	cout << string(5, ' ') << "[7] Exit.\n";
+	cout << string(5, ' ') << "[7] Manage Users.\n";
+	cout << string(5, ' ') << "[8] Logout.\n";
 	cout << string(LengthOfLine, '=') << endl;
 
 }
@@ -1356,17 +1409,31 @@ void PrintEndCaption() {
 	cout << string(LengthOfLine, '=') << endl;
 }
 
+void CreateDefaultAdminIfNoUsers() {
+	vector<stUserAccount> vUsers;
+	ReadUsersFromFile(vUsers);
+
+	if (vUsers.empty()) {
+		stUserAccount Admin;
+		Admin.UserName = "Admin";
+		Admin.Passowrd = "1234";
+		Admin.Permission = enMainMenuPermissions::pAll;
+		AppendTheNewUserAccountRecordToFile(CreatUserAccountRecord(Admin));
+	}
+}
+
 void StartTheProgram() {
+	CreateDefaultAdminIfNoUsers();
 	LoginAction();
 
 	while (true) {
-		
+
 		PrintTheMainMenu();
 
 		enTasks Task;
 		Task = WhatTheTask();
-        PerformeTheTask(Task);
-		
+		PerformeTheTask(Task);
+
 	}
 
 
