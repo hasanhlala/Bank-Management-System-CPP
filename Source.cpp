@@ -30,6 +30,7 @@ struct stUserAccount {
 	string UserName;
 	string Passowrd;
 	enMainMenuPermissions Permission;
+	bool MarkForDelete = false;
 };
 
 enum enTasks {
@@ -138,7 +139,9 @@ void ReadUsersFromFile(vector<stUserAccount>& vUsers);
 string CreatUserAccountRecord(stUserAccount UserAccount);
 stUserAccount ReadUserAccount();
 stUserAccount ParseRecordToUserAccount(string Record, string Diameter = "/#/");
-
+void AppendTheNewUserAccountRecordToFile(string UserAccountRecord);
+enMainMenuPermissions ReadUserPermission();
+bool CheckAccesPermission(enMainMenuPermissions Permission);
 
 
 void StartTheProgram();
@@ -1103,6 +1106,66 @@ void AddNewUserToFile() {
 	AppendTheNewUserAccountRecordToFile(CreatUserAccountRecord(UserAccount));
 }
 
+void PrintDeleteScreen() {
+	string Title = "Delete User";
+	int LineLength = 10 + Title.length() + 10;
+	cout << string(LineLength, '-') << endl;
+	cout << string(10, ' ') << Title << endl;
+	cout << string(LineLength, '-') << endl;
+
+}
+
+void MarkUserAccountForDelete(vector <stUserAccount>& vUsers, string Username) {
+	for (int i = 0; i < vUsers.size(); i++) {
+		if (vUsers[i].UserName == Username)
+			vUsers[i].MarkForDelete = true;
+	}
+}
+
+void LoadUsersAccountsFromVectorToFile(vector<stUserAccount>& vUsers) {
+	fstream MyFile;
+	MyFile.open(UsersFile, ios::out);
+
+	if (MyFile.is_open()) {
+		string line;
+		for (int i = 0; i < vUsers.size(); i++) {
+			if (!vUsers[i].MarkForDelete) {
+				line = CreatUserAccountRecord(vUsers[i]);
+				MyFile << line << endl;
+			}
+		}
+		MyFile.close();
+	}
+
+}
+
+void InteractiveDeleteSingleUserAccount(vector <stUserAccount>& vUsers) {
+	cout << "\nEnter the account you want to delete it : \n";
+	stUserAccount UserAccountDelete = ReadUserAccount();
+
+	while (!IfUsernameFoundInFile(UserAccountDelete.UserName)) {
+		cout << "\nuncorrect Username/Passowrd!!\n";
+		cout << "Please Enter Again...\n";
+		UserAccountDelete = ReadUserAccount();
+	}
+
+	MarkUserAccountForDelete(vUsers, UserAccountDelete.UserName);
+}
+
+void InteractiveDeleteMultiUsersAccounts() {
+	PrintDeleteScreen();
+	vector <stUserAccount> vUsers;
+	ReadUsersFromFile(vUsers);
+	char DeleteMore = 'y';
+
+	while (DeleteMore == 'y') {
+		InteractiveDeleteSingleUserAccount(vUsers);
+		cout << "\nDo you want to delete more ? y/n ?";
+		cin >> DeleteMore;
+	}
+	LoadUsersAccountsFromVectorToFile(vUsers);
+}
+
 void PerformeUserAction(enUsersTransactions UserTransaction) {
 
 	switch (UserTransaction) {
@@ -1115,6 +1178,8 @@ void PerformeUserAction(enUsersTransactions UserTransaction) {
 		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::DeleteUser:
+		InteractiveDeleteMultiUsersAccounts;
+		ReturnToUsersActionsMainMenu();
 		break;
 	case enUsersTransactions::UpdateUser:
 		break;
