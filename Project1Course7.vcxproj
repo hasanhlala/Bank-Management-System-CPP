@@ -18,6 +18,21 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Clients.h" />
+    <ClInclude Include="Common.h" />
+    <ClInclude Include="Menus.h" />
+    <ClInclude Include="Transactions.h" />
+    <ClInclude Include="Users.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Clients.cpp" />
+    <ClCompile Include="Common.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Menus.cpp" />
+    <ClCompile Include="Transactions.cpp" />
+    <ClCompile Include="Users.cpp" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
@@ -122,12 +137,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="Source.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Functions.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>
