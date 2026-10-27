@@ -95,6 +95,7 @@ void WithdrawFromClient() {
 		vector <stClientData> vClients;
 		ReadClientsFromFile(vClients);
 		int Index = FindClientIndexInVector(vClients, CurrentClient.AccountNumber);
+		vClients[Index] = CurrentClient;
 		WriteClientsToFile(vClients);
 		cout << "\nThe Account Balance after the withdrawing is : " << vClients[Index].AccountBalance << endl;
 	}
