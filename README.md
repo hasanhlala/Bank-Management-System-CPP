@@ -2,8 +2,8 @@
 
 <p align="center">
   Two console-based banking applications written in C++:<br>
-  a full <b>Bank Management System</b> for bank employees and a simplified <b>ATM System</b> for clients,<br>
-  both using file-based storage.
+  a full <b>Bank Management System</b> with user accounts and permissions for bank employees,<br>
+  and a simplified <b>ATM System</b> for clients. Both use file-based storage.
 </p>
 
 <p align="center">
@@ -31,20 +31,32 @@
 
 ## Overview
 
-This repository simulates the core of a small bank system. It contains **two apps** that share the same client data file and the same client structure:
+This repository simulates the core of a small bank system. It contains **two apps** that share the same client data file (`ClientsData`) and the same client structure:
 
 | App | Used by | What it does |
 |---|---|---|
-| **Bank Management System** | Bank employee | Manages client accounts and transactions from a text-based menu |
+| **Bank Management System** | Bank employee | Login with a user account, then manage clients, transactions and users according to the user's permissions |
 | **ATM System** | Bank client | Logs in with account number and PIN code, then deposits, withdraws and checks the balance |
 
 All data is stored in plain text files, so no database is required.
 
-It started as the end-of-course project for Course 7 of the Programming Advices C++ track (v1.0), was extended with a full transactions module (v2.0), and now includes the ATM System (v4.0).
+It started as the end-of-course project for Course 7 of the Programming Advices C++ track (v1.0), was extended with a transactions module (v2.0) and a user and permissions system (v3.0), and now includes the ATM System (v4.0).
 
 ## Features
 
 ### Bank Management System
+
+**Login and users (v3.0)**
+- Employee login with username and password
+- A default `Admin` account is created automatically on the first run when no users exist
+- **Manage Users:** list, add, delete, update and find users
+- The `Admin` account cannot be deleted
+- Usernames must be unique
+
+**Permissions (v3.0)**
+- Every user has either full access or a custom set of permissions (show clients, add, delete, update, find, transactions, manage users)
+- A user without permission sees an "Access Denied" message instead of the screen
+- Permissions are stored as bit flags in one number
 
 **Client management (v1.0)**
 - Add new clients, with a duplicate account number check
@@ -58,8 +70,9 @@ It started as the end-of-course project for Course 7 of the Programming Advices 
 - **Withdraw:** withdraw money, blocked when the amount exceeds the balance
 - **Total Balances:** list every client's balance with the total sum
 - Y/N confirmation before every transaction
-- Input validation for menu choices and amounts
-- Clean exit from the main menu
+- Input validation for the account number and withdraw amount
+
+**Logout** returns to the login screen so another user can sign in.
 
 ### ATM System (v4.0)
 
@@ -92,33 +105,67 @@ git clone https://github.com/hasanhlala/Bank-Management-System-CPP.git
 2. Choose **Debug | x64**.
 3. Press **Ctrl + F5** to build and run.
 
+### First login (Bank Management System)
+
+On the first run the program creates the default account:
+
+| Username | Password | Permissions |
+|---|---|---|
+| `Admin` | `1234` | Full access |
+
+Sign in with it, then open **Manage Users** to create your own accounts and change the password.
+
 > The ATM System can only log in clients that already exist in `ClientsData`. Add clients first with the Bank Management System, or use the sample data in the `Data` folder.
 
 ## Usage
 
 ### Bank Management System
 
+The program starts with the login screen:
+
 ```
-==========================================
-          Main Menu Screen
-==========================================
+==============================
+          Login Screen
+==============================
+Enter Username?
+Enter Password?
+```
+
+After a successful login, the main menu is shown:
+
+```
+=====================================
+          Main Menue Screen
+=====================================
      [1] Show Client List.
      [2] Add New Client.
      [3] Delete Client.
-     [4] Update Client.
+     [4] Update Client
      [5] Find Client.
      [6] Transactions.
-     [7] Exit.
-==========================================
+     [7] Manage Users.
+     [8] Logout.
+=====================================
 ```
 
-Choosing **Transactions** opens a second menu:
+**Transactions** opens a second menu:
 
 ```
      [1] Deposit.
      [2] Withdraw.
-     [3] Total Balances.
-     [4] Main Menu.
+     [3] Total Balances
+     [4] Main Menue.
+```
+
+**Manage Users** opens a third menu:
+
+```
+     [1] List Users.
+     [2] Add New User.
+     [3] Delete User.
+     [4] Update User.
+     [5] Find User.
+     [6] Main Menue.
 ```
 
 ### ATM System
@@ -148,7 +195,9 @@ Choose what do you want to do? [1 to 4]?
 
 ## Data format
 
-Both apps use a text file named `ClientsData`. Each client is stored on one line, with fields separated by `/#/`:
+Fields are separated by `/#/` and each record is stored on one line.
+
+**Clients** (`ClientsData`, used by both apps):
 
 ```
 AccountNumber/#/PinCode/#/Name/#/Phone/#/Balance
@@ -160,12 +209,45 @@ Example with sample data:
 A101/#/1234/#/Sample Client/#/0999000000/#/5000
 ```
 
+**Users** (`UsersFile`, used by the Bank Management System):
+
+```
+UserName/#/Password/#/Permission
+```
+
+Example:
+
+```
+Admin/#/1234/#/-1
+```
+
+The permission is `-1` for full access, or the sum of the values below:
+
+| Permission | Value |
+|---|---|
+| Show Client List | 1 |
+| Add New Client | 2 |
+| Delete Client | 4 |
+| Update Client | 8 |
+| Find Client | 16 |
+| Transactions | 32 |
+| Manage Users | 64 |
+
+For example, a user who can only show and find clients has the permission `1 + 16 = 17`.
+
 Sample data files are included in the `Data` folder.
 
 ## Project structure
 
 ```
 .
+├── BankMangementSystem/          # Bank Management System (employee app)
+│   ├── main.cpp                      # Entry point
+│   ├── Menus.cpp / .h                # Main menu and task handling
+│   ├── Clients.cpp / .h              # Client records, file reading and writing
+│   ├── Transactions.cpp / .h         # Deposit, withdraw, total balances
+│   ├── Users.cpp / .h                # Login, users and permissions
+│   └── Common.cpp / .h               # Shared helpers and file names
 ├── ATMSystem/                    # ATM System (client app)
 │   └── ATMSystem/
 │       └── ATMSystem/
@@ -176,9 +258,8 @@ Sample data files are included in the `Data` folder.
 │           ├── TransactionATM.h
 │           ├── CommonATM.cpp / .h    # Shared helpers and file names
 │           └── ATMSystem.vcxproj
-├── BankMangementSystem/          # Bank Management System (employee app)
-├── Data/                         # Sample client data files
-├── Project1Course7/              # Original Course 7 project (v1.0 and v2.0)
+├── Data/                         # Sample data files
+├── Project1Course7/              # Original Course 7 project
 ├── screenshots/                  # Images used in this README
 ├── .gitattributes
 ├── .gitignore
@@ -191,6 +272,7 @@ Sample data files are included in the `Data` folder.
 |---|---|
 | [v1.0](../../releases/tag/v1.0) | Client management: add, show, update, delete, find |
 | [v2.0](../../releases/tag/v2.0) | Adds the Transactions menu: deposit, withdraw, total balances |
+| [v3.0](../../releases/tag/v3.0) | Adds login, user management and permissions, and splits the code into separate modules |
 | [v4.0](../../releases/tag/v4.0) | Adds the ATM System alongside the Bank Management System |
 
 ## What I learned
@@ -201,11 +283,13 @@ Sample data files are included in the `Data` folder.
 - Formatting console tables with `<iomanip>` (`setw`, `left`)
 - Passing data by reference and splitting logic into small functions
 - Validating user input and handling not-found cases safely
-- Splitting a project into several `.cpp` and header files, and sharing a global variable (`CurrentClient`) between them with `extern`
+- Storing permissions as bit flags and checking them with bitwise operators (`|`, `&`)
+- Splitting a project into several `.cpp` and header files, and sharing global variables (`CurrentUser`, `CurrentClient`) between them with `extern`
 - Git workflow: small commits, branches, pull requests, tags and GitHub releases
 
 ## Roadmap
 
+- [x] User login with permissions (Bank Management System)
 - [x] PIN verification before transactions (ATM System)
 - [ ] Transaction history log
 - [ ] Transfer between accounts
@@ -213,7 +297,7 @@ Sample data files are included in the `Data` folder.
 
 ## Credits
 
-Based on the C++ course by Dr. Mohammed Abu-Hadhoud (Programming Advices). The transactions module was added as the second project of Course 7.
+Based on the C++ course by Dr. Mohammed Abu-Hadhoud (Programming Advices). The Bank Management System was built as the end-of-course project for Course 7 and 8.
 
 ## Author
 
