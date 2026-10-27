@@ -1,15 +1,16 @@
-
+# Bank Management System (C++)
 
 <p align="center">
-  A console-based bank management application written in C++,<br>
-  with client management, transactions and file-based storage.
+  Two console-based banking applications written in C++:<br>
+  a full <b>Bank Management System</b> for bank employees and a simplified <b>ATM System</b> for clients,<br>
+  both using file-based storage.
 </p>
 
 <p align="center">
   <img alt="C++" src="https://img.shields.io/badge/C%2B%2B-Console%20App-00599C?logo=cplusplus&logoColor=white">
   <img alt="Platform" src="https://img.shields.io/badge/Platform-Windows-0078D6?logo=windows&logoColor=white">
   <img alt="IDE" src="https://img.shields.io/badge/IDE-Visual%20Studio%202022-5C2D91?logo=visualstudio&logoColor=white">
-  <img alt="Version" src="https://img.shields.io/badge/version-2.0-success">
+  <img alt="Version" src="https://img.shields.io/badge/version-4.0-success">
 </p>
 
 ---
@@ -30,11 +31,20 @@
 
 ## Overview
 
-This project simulates the core of a small bank system. A bank employee can manage client accounts from a text-based menu and perform deposits and withdrawals. All data is stored in a plain text file, so no database is required.
+This repository simulates the core of a small bank system. It contains **two apps** that share the same client data file and the same client structure:
 
-It was built as the end-of-course project for Course 7 of the Programming Advices C++ track (v1.0), then extended with a full transactions module (v2.0).
+| App | Used by | What it does |
+|---|---|---|
+| **Bank Management System** | Bank employee | Manages client accounts and transactions from a text-based menu |
+| **ATM System** | Bank client | Logs in with account number and PIN code, then deposits, withdraws and checks the balance |
+
+All data is stored in plain text files, so no database is required.
+
+It started as the end-of-course project for Course 7 of the Programming Advices C++ track (v1.0), was extended with a full transactions module (v2.0), and now includes the ATM System (v4.0).
 
 ## Features
+
+### Bank Management System
 
 **Client management (v1.0)**
 - Add new clients, with a duplicate account number check
@@ -51,6 +61,15 @@ It was built as the end-of-course project for Course 7 of the Programming Advice
 - Input validation for menu choices and amounts
 - Clean exit from the main menu
 
+### ATM System (v4.0)
+
+- **Login** with account number and PIN code. A wrong pair shows an error and asks again
+- **Deposit:** shows the client's data, asks for the amount and a Y/N confirmation, then saves the new balance to the file
+- **Withdraw:** blocked when the amount is higher than the balance, with a Y/N confirmation before saving
+- **User Balances:** shows the logged-in client's account number, name and balance
+- **Logout** from the transactions menu
+- Reads and writes the same `ClientsData` file as the Bank Management System
+
 ## Screenshots
 
 | Main menu | Transactions menu |
@@ -63,18 +82,21 @@ It was built as the end-of-course project for Course 7 of the Programming Advice
 - Windows
 - Visual Studio 2022 with the **Desktop development with C++** workload
 
-> The program uses `system("cls")` and `system("pause")`, so it targets Windows.
+> The programs use `system("cls")` and `system("pause")`, so they target Windows.
 
 ### Build and run
 ```bash
 git clone https://github.com/hasanhlala/Bank-Management-System-CPP.git
 ```
-1. Open `Project1Course7.sln` in Visual Studio.
-2. Press **Ctrl + F5** to build and run.
+1. Open the `.sln` file inside the folder of the app you want (`BankMangementSystem` or `ATMSystem`) in Visual Studio.
+2. Choose **Debug | x64**.
+3. Press **Ctrl + F5** to build and run.
 
-The program reads and writes a file named `ClientsData` in the working directory. If the file does not exist, it is created when you add the first client.
+> The ATM System can only log in clients that already exist in `ClientsData`. Add clients first with the Bank Management System, or use the sample data in the `Data` folder.
 
 ## Usage
+
+### Bank Management System
 
 ```
 ==========================================
@@ -99,9 +121,34 @@ Choosing **Transactions** opens a second menu:
      [4] Main Menu.
 ```
 
+### ATM System
+
+The program starts with the login screen:
+
+```
+-------------------------
+          Login
+-------------------------
+Enter the account number:
+Enter PIN code:
+```
+
+After a successful login, the client sees the transactions menu:
+
+```
+                Transactions Main Menue
+=======================================================
+        [1] Deposit.
+        [2] Withdraw.
+        [3] User Balances.
+        [4] Logout.
+=======================================================
+Choose what do you want to do? [1 to 4]?
+```
+
 ## Data format
 
-Each client is stored on one line. Fields are separated by `/#/`:
+Both apps use a text file named `ClientsData`. Each client is stored on one line, with fields separated by `/#/`:
 
 ```
 AccountNumber/#/PinCode/#/Name/#/Phone/#/Balance
@@ -110,17 +157,32 @@ AccountNumber/#/PinCode/#/Name/#/Phone/#/Balance
 Example with sample data:
 
 ```
-A101/#/1234/#/Sample Client/#/0999000000/#/5000.000000
+A101/#/1234/#/Sample Client/#/0999000000/#/5000
 ```
+
+Sample data files are included in the `Data` folder.
 
 ## Project structure
 
 ```
 .
-├── Source.cpp              # Program entry point, menus and logic
-├── ClientsData             # Data file, one client per line
-├── Project1Course7.sln     # Visual Studio solution
-└── screenshots/            # Images used in this README
+├── ATMSystem/                    # ATM System (client app)
+│   └── ATMSystem/
+│       └── ATMSystem/
+│           ├── main.cpp              # Entry point
+│           ├── ATMSystem.cpp / .h    # Login screen and program flow
+│           ├── ClientsATM.cpp / .h   # Client structure, file reading and writing
+│           ├── TransactionsATM.cpp   # Deposit, withdraw, balance, menu
+│           ├── TransactionATM.h
+│           ├── CommonATM.cpp / .h    # Shared helpers and file names
+│           └── ATMSystem.vcxproj
+├── BankMangementSystem/          # Bank Management System (employee app)
+├── Data/                         # Sample client data files
+├── Project1Course7/              # Original Course 7 project (v1.0 and v2.0)
+├── screenshots/                  # Images used in this README
+├── .gitattributes
+├── .gitignore
+└── README.md
 ```
 
 ## Versions
@@ -129,6 +191,7 @@ A101/#/1234/#/Sample Client/#/0999000000/#/5000.000000
 |---|---|
 | [v1.0](../../releases/tag/v1.0) | Client management: add, show, update, delete, find |
 | [v2.0](../../releases/tag/v2.0) | Adds the Transactions menu: deposit, withdraw, total balances |
+| [v4.0](../../releases/tag/v4.0) | Adds the ATM System alongside the Bank Management System |
 
 ## What I learned
 
@@ -138,11 +201,12 @@ A101/#/1234/#/Sample Client/#/0999000000/#/5000.000000
 - Formatting console tables with `<iomanip>` (`setw`, `left`)
 - Passing data by reference and splitting logic into small functions
 - Validating user input and handling not-found cases safely
-- Git workflow: small commits, tags and GitHub releases
+- Splitting a project into several `.cpp` and header files, and sharing a global variable (`CurrentClient`) between them with `extern`
+- Git workflow: small commits, branches, pull requests, tags and GitHub releases
 
 ## Roadmap
 
-- [ ] PIN verification before transactions
+- [x] PIN verification before transactions (ATM System)
 - [ ] Transaction history log
 - [ ] Transfer between accounts
 - [ ] Portable screen clearing instead of `system("cls")`
