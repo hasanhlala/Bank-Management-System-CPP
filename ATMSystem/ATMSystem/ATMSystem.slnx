@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="ATMSystem/ATMSystem.vcxproj" Id="5b813254-d860-43c4-b494-34a3afb1c69e" />
+</Solution>
